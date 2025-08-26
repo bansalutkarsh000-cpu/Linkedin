@@ -1,574 +1,338 @@
-// LinkedIn Profile Reviewer MVP - Enhanced JavaScript
+// Sample profile data
+const sampleProfileData = `Software Engineer at Tech Corp
 
-// Sample data and analysis results
-const sampleData = {
-  sampleProfile: `Software Engineer at Tech Corp
-
-Experienced software engineer with 5 years in full-stack development. Passionate about building scalable applications using React, Node.js, and cloud technologies. Currently working on AI-powered solutions for business automation.
+Experienced software engineer with 5 years in full-stack development. Passionate about building scalable applications using React, Node.js, and cloud technologies.
 
 Experience:
 • Software Engineer at Tech Corp (2020-Present)
 - Developed web applications using React and Node.js
-- Collaborated with cross-functional teams of 8+ developers
-- Implemented CI/CD pipelines reducing deployment time by 60%
-- Built microservices handling 100K+ daily active users
+- Collaborated with cross-functional teams
+- Implemented CI/CD pipelines
 
-• Junior Developer at StartupXYZ (2018-2020)
-- Created responsive web interfaces using HTML, CSS, JavaScript
-- Worked with REST APIs and third-party integrations
-- Participated in agile development processes
+Skills: JavaScript, React, Node.js, Python, AWS, Docker`;
 
-Skills: JavaScript, React, Node.js, Python, AWS, Docker, MongoDB, Git, Agile, Scrum`,
-
-  analysisResults: {
-    overallScore: 72,
-    overallFeedback: "Good foundation with room for improvement. Your profile shows relevant experience but could benefit from more quantified achievements and keyword optimization.",
-    sections: {
-      headline: {
-        score: 65,
-        feedback: "Your headline is functional but lacks impact. Consider adding your value proposition and key achievements.",
-        recommendation: "Try: 'Senior Software Engineer | Full-Stack Developer | AI Solutions Expert | Building Scalable Applications at Tech Corp'",
-        improvements: ["Add specific technologies", "Include years of experience", "Mention area of expertise", "Add value proposition"]
-      },
-      summary: {
-        score: 78,
-        feedback: "Good foundation with relevant experience mentioned. Could be more compelling with specific achievements.",
-        recommendation: "Quantify your impact with metrics, add specific technologies, and mention notable projects or achievements.",
-        improvements: ["Add quantifiable achievements", "Include specific project examples", "Mention team size or budget managed", "Add call-to-action"]
-      },
-      experience: {
-        score: 70,
-        feedback: "Experience section covers the basics but lacks detail and impact metrics.",
-        recommendation: "Use action verbs, add specific metrics (users served, performance improvements, cost savings), and detail your key accomplishments.",
-        improvements: ["Add quantified results", "Use stronger action verbs", "Include project outcomes", "Show career progression"]
-      },
-      skills: {
-        score: 75,
-        feedback: "Good technical skill coverage. Consider organizing by categories and adding soft skills.",
-        recommendation: "Organize into categories: Programming Languages, Frameworks, Tools, Soft Skills. Add relevant certifications.",
-        improvements: ["Categorize skills", "Add soft skills", "Include certifications", "Add trending technologies"]
-      }
-    },
-    keywordOptimization: {
-      score: 68,
-      missingKeywords: ["Senior", "Lead", "Agile", "Scrum", "API Development", "Database Design", "DevOps", "Cloud Architecture"],
-      industryKeywords: ["Software Engineering", "Full-Stack", "React", "Node.js", "Cloud", "JavaScript", "Python"],
-      recommendation: "Include industry-specific keywords that recruiters commonly search for in your field."
-    },
-    overallRecommendations: [
-      "Add a professional headshot to increase profile views by up to 21x",
-      "Expand your network by connecting with colleagues and industry professionals",
-      "Share industry insights and engage with posts to increase visibility",
-      "Request recommendations from current and former colleagues",
-      "Update your profile regularly with new projects and achievements",
-      "Join relevant LinkedIn groups in your industry",
-      "Use LinkedIn's skills assessment feature to validate your expertise"
-    ],
-    actionPlan: [
-      {
-        priority: "High",
-        task: "Update your headline with specific technologies and value proposition",
-        timeframe: "Today"
-      },
-      {
-        priority: "High", 
-        task: "Add quantified achievements to your experience section",
-        timeframe: "This week"
-      },
-      {
-        priority: "Medium",
-        task: "Reorganize skills section with categories and add certifications",
-        timeframe: "This week"
-      },
-      {
-        priority: "Medium",
-        task: "Request recommendations from 3-5 colleagues",
-        timeframe: "Next 2 weeks"
-      },
-      {
-        priority: "Low",
-        task: "Join 5 relevant industry groups and start engaging",
-        timeframe: "Next month"
-      }
-    ]
-  }
+// Analysis results data
+const mockAnalysisResults = {
+  overallScore: 72,
+  sections: {
+    headline: { score: 65, feedback: "Good but could be more impactful", recommendation: "Add specific technologies and years of experience" },
+    summary: { score: 78, feedback: "Solid foundation with relevant experience", recommendation: "Add quantifiable achievements and metrics" },
+    experience: { score: 70, feedback: "Good structure but lacks impact metrics", recommendation: "Use action verbs and add specific results" },
+    skills: { score: 75, feedback: "Good technical coverage", recommendation: "Organize by categories and add soft skills" }
+  },
+  recommendations: [
+    "Add professional headshot to increase profile views",
+    "Include quantifiable achievements in experience section", 
+    "Expand network by connecting with industry professionals",
+    "Request recommendations from colleagues",
+    "Share industry insights regularly"
+  ]
 };
 
-// Utility Functions
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  setupEventListeners();
+});
+
+function setupEventListeners() {
+  // Get Started buttons
+  const getStartedBtn = document.querySelector('.get-started-btn');
+  const heroCta = document.querySelector('.hero-cta');
+  
+  if (getStartedBtn) {
+    getStartedBtn.onclick = function() {
+      scrollToSection('analyzer');
+    };
+  }
+  
+  if (heroCta) {
+    heroCta.onclick = function() {
+      scrollToSection('analyzer');
+    };
+  }
+  
+  // Load Sample button
+  const loadSampleBtn = document.querySelector('.load-sample-btn');
+  if (loadSampleBtn) {
+    loadSampleBtn.onclick = function() {
+      loadSample();
+    };
+  }
+  
+  // Analyze button
+  const analyzeBtn = document.querySelector('.analyze-btn');
+  if (analyzeBtn) {
+    analyzeBtn.onclick = function() {
+      startAnalysis();
+    };
+  }
+  
+  // Download button
+  const downloadBtn = document.querySelector('.download-btn');
+  if (downloadBtn) {
+    downloadBtn.onclick = function() {
+      downloadReport();
+    };
+  }
+  
+  // Textarea auto-resize
+  const textarea = document.getElementById('profile-input');
+  if (textarea) {
+    textarea.oninput = function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    };
+  }
+}
+
 function scrollToSection(sectionId) {
-  const element = document.getElementById(sectionId);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Focus textarea after scroll
+    setTimeout(function() {
+      const textarea = document.getElementById('profile-input');
+      if (textarea) textarea.focus();
+    }, 800);
   }
 }
 
-function loadSampleProfile() {
-  const textarea = document.getElementById('profileInput');
-  textarea.value = sampleData.sampleProfile;
-  textarea.focus();
-  updateCharCount();
-  
-  // Show success message
-  showNotification('✅ Sample profile loaded! Click "Analyze Profile" to see results.', 'success');
-}
-
-function clearProfile() {
-  const textarea = document.getElementById('profileInput');
-  textarea.value = '';
-  textarea.focus();
-  updateCharCount();
-  
-  // Hide results if showing
-  document.getElementById('results').style.display = 'none';
-  
-  showNotification('🗑️ Profile cleared!', 'info');
-}
-
-function updateCharCount() {
-  const textarea = document.getElementById('profileInput');
-  const charCount = document.getElementById('charCount');
-  const count = textarea.value.length;
-  charCount.textContent = `${count} characters`;
-  
-  // Color coding based on length
-  if (count < 500) {
-    charCount.style.color = '#ef4444';
-  } else if (count < 1000) {
-    charCount.style.color = '#f59e0b';
-  } else {
-    charCount.style.color = '#10b981';
+function loadSample() {
+  const textarea = document.getElementById('profile-input');
+  if (textarea) {
+    textarea.value = sampleProfileData;
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+    
+    // Visual feedback
+    textarea.style.background = 'var(--color-bg-3)';
+    setTimeout(function() {
+      textarea.style.background = '';
+    }, 300);
+    
+    textarea.focus();
   }
 }
 
-function showNotification(message, type = 'info') {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `notification notification--${type}`;
-  notification.textContent = message;
+function startAnalysis() {
+  const textarea = document.getElementById('profile-input');
+  const loadingDiv = document.getElementById('loading');
+  const resultsDiv = document.getElementById('results');
+  const analyzeBtn = document.querySelector('.analyze-btn');
+  const loadSampleBtn = document.querySelector('.load-sample-btn');
   
-  // Style the notification
-  Object.assign(notification.style, {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    padding: '12px 20px',
-    borderRadius: '8px',
-    color: 'white',
-    zIndex: '10000',
-    fontSize: '14px',
-    fontWeight: '500',
-    maxWidth: '300px',
-    wordWrap: 'break-word',
-    backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
-  });
-  
-  document.body.appendChild(notification);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.parentNode.removeChild(notification);
-    }
-  }, 3000);
-}
-
-function getScoreClass(score) {
-  if (score >= 80) return 'score--excellent';
-  if (score >= 60) return 'score--good';
-  if (score >= 40) return 'score--average';
-  return 'score--poor';
-}
-
-function updateProgressBar(elementId, score) {
-  const progressBar = document.querySelector(`#${elementId} .progress-bar__fill`);
-  if (progressBar) {
-    setTimeout(() => {
-      progressBar.style.width = `${score}%`;
-    }, 500);
-  }
-}
-
-function displaySectionScore(sectionId, sectionData) {
-  const sectionElement = document.getElementById(`${sectionId}Score`);
-  if (!sectionElement) return;
-
-  const scoreElement = sectionElement.querySelector('.score');
-  const feedbackElement = sectionElement.querySelector('.feedback');
-  const recommendationElement = sectionElement.querySelector('.recommendation p');
-  const improvementsList = sectionElement.querySelector('.improvements ul');
-
-  // Update score with animation
-  let currentScore = 0;
-  const targetScore = sectionData.score;
-  const increment = targetScore / 30;
-  
-  const scoreAnimation = setInterval(() => {
-    currentScore += increment;
-    if (currentScore >= targetScore) {
-      currentScore = targetScore;
-      clearInterval(scoreAnimation);
-    }
-    scoreElement.textContent = Math.round(currentScore);
-  }, 50);
-  
-  scoreElement.className = `score ${getScoreClass(sectionData.score)}`;
-
-  // Update content
-  feedbackElement.textContent = sectionData.feedback;
-  recommendationElement.textContent = sectionData.recommendation;
-
-  // Update improvements list
-  improvementsList.innerHTML = '';
-  sectionData.improvements.forEach((improvement, index) => {
-    const li = document.createElement('li');
-    li.textContent = improvement;
-    li.style.opacity = '0';
-    li.style.transform = 'translateY(10px)';
-    improvementsList.appendChild(li);
-    
-    // Animate list items
-    setTimeout(() => {
-      li.style.transition = 'all 0.3s ease';
-      li.style.opacity = '1';
-      li.style.transform = 'translateY(0)';
-    }, index * 100);
-  });
-}
-
-function displayKeywordAnalysis(keywordData) {
-  const missingKeywordsElement = document.getElementById('missingKeywords');
-  const industryKeywordsElement = document.getElementById('industryKeywords');
-
-  // Display missing keywords
-  missingKeywordsElement.innerHTML = '';
-  keywordData.missingKeywords.forEach((keyword, index) => {
-    setTimeout(() => {
-      const tag = document.createElement('span');
-      tag.className = 'keyword-tag keyword-tag--missing';
-      tag.textContent = keyword;
-      tag.style.opacity = '0';
-      tag.style.transform = 'scale(0.8)';
-      missingKeywordsElement.appendChild(tag);
-      
-      setTimeout(() => {
-        tag.style.transition = 'all 0.2s ease';
-        tag.style.opacity = '1';
-        tag.style.transform = 'scale(1)';
-      }, 50);
-    }, index * 100);
-  });
-
-  // Display industry keywords
-  industryKeywordsElement.innerHTML = '';
-  keywordData.industryKeywords.forEach((keyword, index) => {
-    setTimeout(() => {
-      const tag = document.createElement('span');
-      tag.className = 'keyword-tag keyword-tag--found';
-      tag.textContent = keyword;
-      tag.style.opacity = '0';
-      tag.style.transform = 'scale(0.8)';
-      industryKeywordsElement.appendChild(tag);
-      
-      setTimeout(() => {
-        tag.style.transition = 'all 0.2s ease';
-        tag.style.opacity = '1';
-        tag.style.transform = 'scale(1)';
-      }, 50);
-    }, index * 100);
-  });
-}
-
-function displayOverallRecommendations(recommendations) {
-  const list = document.getElementById('overallRecommendationsList');
-  list.innerHTML = '';
-  
-  recommendations.forEach((recommendation, index) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="recommendation-icon">💡</span> ${recommendation}`;
-    li.style.opacity = '0';
-    li.style.transform = 'translateX(-20px)';
-    list.appendChild(li);
-    
-    setTimeout(() => {
-      li.style.transition = 'all 0.3s ease';
-      li.style.opacity = '1';
-      li.style.transform = 'translateX(0)';
-    }, index * 100);
-  });
-}
-
-function displayActionPlan(actionPlan) {
-  const container = document.getElementById('actionPlan');
-  container.innerHTML = '';
-  
-  actionPlan.forEach((action, index) => {
-    const actionElement = document.createElement('div');
-    actionElement.className = `action-step action-step--${action.priority.toLowerCase()}`;
-    actionElement.innerHTML = `
-      <div class="action-step__header">
-        <span class="action-step__priority">${action.priority} Priority</span>
-        <span class="action-step__timeframe">${action.timeframe}</span>
-      </div>
-      <p class="action-step__task">${action.task}</p>
-    `;
-    
-    actionElement.style.opacity = '0';
-    actionElement.style.transform = 'translateY(20px)';
-    container.appendChild(actionElement);
-    
-    setTimeout(() => {
-      actionElement.style.transition = 'all 0.3s ease';
-      actionElement.style.opacity = '1';
-      actionElement.style.transform = 'translateY(0)';
-    }, index * 150);
-  });
-}
-
-function analyzeProfile() {
-  const profileText = document.getElementById('profileInput').value.trim();
-  
-  if (!profileText) {
-    showNotification('❌ Please enter your LinkedIn profile content first.', 'error');
-    document.getElementById('profileInput').focus();
+  if (!textarea || !textarea.value.trim()) {
+    alert('Please enter your LinkedIn profile content or load a sample profile.');
+    if (textarea) textarea.focus();
     return;
   }
-
-  if (profileText.length < 100) {
-    showNotification('⚠️ Profile content seems too short. Please add more details for better analysis.', 'error');
-    return;
-  }
-
-  // Show loading state
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  const btnText = analyzeBtn.querySelector('.btn__text');
-  const btnLoader = analyzeBtn.querySelector('.btn__loader');
   
-  btnText.style.display = 'none';
-  btnLoader.style.display = 'flex';
-  analyzeBtn.disabled = true;
-
-  // Scroll to results area
-  setTimeout(() => {
-    scrollToSection('results');
-  }, 500);
-
-  // Simulate API call delay with progress updates
-  let progress = 0;
-  const progressInterval = setInterval(() => {
-    progress += Math.random() * 20;
-    if (progress > 90) progress = 90;
-  }, 200);
-
-  setTimeout(() => {
-    clearInterval(progressInterval);
+  // Show loading, hide results
+  if (resultsDiv) {
+    resultsDiv.style.display = 'none';
+    resultsDiv.classList.add('hidden');
+  }
+  
+  if (loadingDiv) {
+    loadingDiv.style.display = 'block';
+    loadingDiv.classList.remove('hidden');
+  }
+  
+  // Disable buttons
+  if (analyzeBtn) {
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = 'Analyzing...';
+  }
+  if (loadSampleBtn) {
+    loadSampleBtn.disabled = true;
+  }
+  
+  // Simulate 2-second analysis
+  setTimeout(function() {
+    // Hide loading
+    if (loadingDiv) {
+      loadingDiv.style.display = 'none';
+      loadingDiv.classList.add('hidden');
+    }
     
-    // Hide loading state
-    btnText.style.display = 'block';
-    btnLoader.style.display = 'none';
-    analyzeBtn.disabled = false;
-
-    // Display results
+    // Show and populate results
     displayResults();
-    showNotification('✅ Analysis complete! Check your results below.', 'success');
-  }, 3000);
-}
-
-function analyzeAgain() {
-  document.getElementById('results').style.display = 'none';
-  scrollToSection('analyzer');
-  document.getElementById('profileInput').focus();
+    
+    if (resultsDiv) {
+      resultsDiv.style.display = 'block';
+      resultsDiv.classList.remove('hidden');
+      
+      // Scroll to results
+      setTimeout(function() {
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+    
+    // Re-enable buttons
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = 'Analyze Profile';
+    }
+    if (loadSampleBtn) {
+      loadSampleBtn.disabled = false;
+    }
+  }, 2000);
 }
 
 function displayResults() {
-  const results = sampleData.analysisResults;
+  // Overall score
+  const overallScore = document.getElementById('overall-score');
+  if (overallScore) {
+    overallScore.textContent = mockAnalysisResults.overallScore;
+  }
   
-  // Show results section with animation
-  const resultsSection = document.getElementById('results');
-  resultsSection.style.display = 'block';
-  resultsSection.style.opacity = '0';
-  resultsSection.style.transform = 'translateY(20px)';
+  // Section scores
+  const sections = ['headline', 'summary', 'experience', 'skills'];
   
-  setTimeout(() => {
-    resultsSection.style.transition = 'all 0.5s ease';
-    resultsSection.style.opacity = '1';
-    resultsSection.style.transform = 'translateY(0)';
-  }, 100);
-  
-  // Update overall score with animation
-  const overallScoreElement = document.getElementById('overallScore');
-  const overallFeedbackElement = document.getElementById('overallFeedback');
-  
-  let currentScore = 0;
-  const targetScore = results.overallScore;
-  const increment = targetScore / 50;
-  
-  const scoreAnimation = setInterval(() => {
-    currentScore += increment;
-    if (currentScore >= targetScore) {
-      currentScore = targetScore;
-      clearInterval(scoreAnimation);
+  sections.forEach(function(section) {
+    const sectionData = mockAnalysisResults.sections[section];
+    if (!sectionData) return;
+    
+    // Score number
+    const scoreEl = document.getElementById(section + '-score');
+    if (scoreEl) {
+      scoreEl.textContent = sectionData.score;
     }
-    overallScoreElement.textContent = Math.round(currentScore);
-  }, 30);
-  
-  overallScoreElement.className = `score score--large ${getScoreClass(results.overallScore)}`;
-  overallFeedbackElement.textContent = results.overallFeedback;
-  
-  // Update progress bar
-  updateProgressBar('overallProgress', results.overallScore);
-  
-  // Display section scores with staggered animation
-  Object.keys(results.sections).forEach((sectionKey, index) => {
-    setTimeout(() => {
-      displaySectionScore(sectionKey, results.sections[sectionKey]);
-    }, index * 200);
+    
+    // Score bar
+    const fillEl = document.getElementById(section + '-fill');
+    if (fillEl) {
+      // Set color based on score
+      if (sectionData.score < 60) {
+        fillEl.setAttribute('data-score', 'low');
+      } else if (sectionData.score < 80) {
+        fillEl.setAttribute('data-score', 'medium');
+      } else {
+        fillEl.setAttribute('data-score', 'high');
+      }
+      
+      // Animate width
+      fillEl.style.width = '0%';
+      setTimeout(function() {
+        fillEl.style.width = sectionData.score + '%';
+      }, 100);
+    }
+    
+    // Feedback
+    const feedbackEl = document.getElementById(section + '-feedback');
+    if (feedbackEl) {
+      feedbackEl.textContent = sectionData.feedback;
+    }
+    
+    // Recommendation
+    const recEl = document.getElementById(section + '-recommendation');
+    if (recEl) {
+      recEl.textContent = '💡 ' + sectionData.recommendation;
+    }
   });
   
-  // Display keyword analysis
-  setTimeout(() => {
-    displayKeywordAnalysis(results.keywordOptimization);
-  }, 800);
-  
-  // Display overall recommendations
-  setTimeout(() => {
-    displayOverallRecommendations(results.overallRecommendations);
-  }, 1000);
-  
-  // Display action plan
-  setTimeout(() => {
-    displayActionPlan(results.actionPlan);
-  }, 1200);
+  // Recommendations list
+  const recList = document.getElementById('recommendations-list');
+  if (recList) {
+    recList.innerHTML = '';
+    mockAnalysisResults.recommendations.forEach(function(rec) {
+      const li = document.createElement('li');
+      li.textContent = rec;
+      recList.appendChild(li);
+    });
+  }
 }
 
 function downloadReport() {
-  const results = sampleData.analysisResults;
-  let reportContent = `LINKEDIN PROFILE ANALYSIS REPORT
-Generated on: ${new Date().toLocaleDateString()}
-Overall Score: ${results.overallScore}/100
+  const textarea = document.getElementById('profile-input');
+  const downloadBtn = document.querySelector('.download-btn');
+  
+  if (!textarea || !textarea.value.trim()) {
+    alert('Please analyze a profile first before downloading the report.');
+    return;
+  }
+  
+  // Generate report content
+  const reportContent = generateReport(textarea.value);
+  
+  try {
+    // Create blob and download
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.href = url;
+    link.download = 'linkedin-profile-analysis.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    // Success feedback
+    if (downloadBtn) {
+      const originalText = downloadBtn.textContent;
+      downloadBtn.textContent = 'Downloaded!';
+      downloadBtn.style.backgroundColor = 'var(--color-success)';
+      downloadBtn.style.color = 'white';
+      
+      setTimeout(function() {
+        downloadBtn.textContent = originalText;
+        downloadBtn.style.backgroundColor = '';
+        downloadBtn.style.color = '';
+      }, 2000);
+    }
+  } catch (error) {
+    alert('Download failed. Please try again.');
+  }
+}
 
-═══════════════════════════════════════════════════
+function generateReport(profileContent) {
+  const date = new Date().toLocaleDateString();
+  
+  let report = `LinkedIn Profile Analysis Report
+Generated: ${date}
 
-EXECUTIVE SUMMARY
-${results.overallFeedback}
+OVERALL SCORE: ${mockAnalysisResults.overallScore}/100
 
-═══════════════════════════════════════════════════
+SECTION BREAKDOWN:
+================
 
-SECTION-WISE ANALYSIS
+`;
+
+  // Add each section
+  Object.keys(mockAnalysisResults.sections).forEach(function(section) {
+    const data = mockAnalysisResults.sections[section];
+    const name = section.charAt(0).toUpperCase() + section.slice(1);
+    
+    report += `${name}:
+Score: ${data.score}/100
+Feedback: ${data.feedback}
+Recommendation: ${data.recommendation}
+
+`;
+  });
+  
+  report += `KEY RECOMMENDATIONS:
+==================
+
 `;
   
-  // Add section analysis
-  Object.keys(results.sections).forEach(sectionKey => {
-    const section = results.sections[sectionKey];
-    reportContent += `
-${sectionKey.toUpperCase()} (Score: ${section.score}/100)
-${section.feedback}
-
-Recommendation: ${section.recommendation}
-
-Key Improvements:`;
-    section.improvements.forEach(improvement => {
-      reportContent += `\n• ${improvement}`;
-    });
-    reportContent += '\n';
+  mockAnalysisResults.recommendations.forEach(function(rec, i) {
+    report += `${i + 1}. ${rec}
+`;
   });
   
-  // Add keyword analysis
-  reportContent += `
-═══════════════════════════════════════════════════
+  report += `
 
-KEYWORD OPTIMIZATION (Score: ${results.keywordOptimization.score}/100)
-${results.keywordOptimization.recommendation}
+PROFILE CONTENT ANALYZED:
+========================
 
-Missing Keywords: ${results.keywordOptimization.missingKeywords.join(', ')}
-Found Keywords: ${results.keywordOptimization.industryKeywords.join(', ')}
+${profileContent}
 
-═══════════════════════════════════════════════════
-
-OVERALL RECOMMENDATIONS`;
-  results.overallRecommendations.forEach(recommendation => {
-    reportContent += `\n• ${recommendation}`;
-  });
+---
+Generated by ProfileAnalyzer
+`;
   
-  // Add action plan
-  reportContent += `
-
-═══════════════════════════════════════════════════
-
-ACTION PLAN`;
-  results.actionPlan.forEach(action => {
-    reportContent += `\n${action.priority} Priority (${action.timeframe}): ${action.task}`;
-  });
-  
-  reportContent += `
-
-═══════════════════════════════════════════════════
-
-Generated by ProfileAnalyzer - AI-Powered LinkedIn Profile Optimization
-Visit: your-app-url.vercel.app`;
-  
-  // Create and download file
-  const blob = new Blob([reportContent], { type: 'text/plain' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `linkedin-profile-analysis-${new Date().toISOString().split('T')}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-  
-  showNotification('📄 Report downloaded successfully!', 'success');
+  return report;
 }
-
-function copyRecommendations() {
-  const results = sampleData.analysisResults;
-  let recommendationsText = '🚀 LINKEDIN PROFILE IMPROVEMENT RECOMMENDATIONS\n\n';
-  
-  recommendationsText += `Overall Score: ${results.overallScore}/100\n\n`;
-  
-  Object.keys(results.sections).forEach(sectionKey => {
-    const section = results.sections[sectionKey];
-    recommendationsText += `${sectionKey.toUpperCase()} (${section.score}/100):\n`;
-    recommendationsText += `${section.recommendation}\n\n`;
-  });
-  
-  recommendationsText += 'NEXT ACTIONS:\n';
-  results.actionPlan.forEach((action, index) => {
-    recommendationsText += `${index + 1}. ${action.task} (${action.priority} Priority - ${action.timeframe})\n`;
-  });
-  
-  navigator.clipboard.writeText(recommendationsText).then(() => {
-    showNotification('📋 Recommendations copied to clipboard!', 'success');
-  }).catch(err => {
-    console.error('Failed to copy: ', err);
-    showNotification('❌ Failed to copy recommendations. Please try again.', 'error');
-  });
-}
-
-// Initialize app
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('LinkedIn Profile Reviewer MVP loaded successfully!');
-  
-  const textarea = document.getElementById('profileInput');
-  
-  // Add character count functionality
-  textarea.addEventListener('input', updateCharCount);
-  updateCharCount(); // Initial count
-  
-  // Add smooth scrolling for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
-  });
-  
-  // Auto-resize textarea
-  textarea.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = this.scrollHeight + 'px';
-  });
-});
