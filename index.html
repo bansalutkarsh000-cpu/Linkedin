@@ -3,21 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Profile Reviewer - AI-Powered Profile Analysis</title>
-    <meta name="description" content="Get comprehensive AI-powered analysis of your LinkedIn profile with actionable recommendations to boost your professional presence.">
+    <title>ProfileAnalyzer - LinkedIn Profile Analysis Tool</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="container">
-            <div class="header__content">
+            <div class="header-content">
                 <div class="logo">
-                    <h1>ProfileAnalyzer</h1>
+                    <h2>ProfileAnalyzer</h2>
                 </div>
-                <nav class="nav">
-                    <button class="btn btn--primary" onclick="scrollToSection('analyzer')">Get Started</button>
-                </nav>
+                <button class="btn btn--primary get-started-btn">Get Started</button>
             </div>
         </div>
     </header>
@@ -25,21 +22,140 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <div class="hero__content">
-                <h1 class="hero__title">Optimize Your LinkedIn Profile with AI</h1>
-                <p class="hero__description">
-                    Get comprehensive analysis of your LinkedIn profile with actionable recommendations 
-                    to increase visibility, attract recruiters, and boost your professional presence.
+            <div class="hero-content">
+                <h1 class="hero-title">Analyze Your LinkedIn Profile</h1>
+                <p class="hero-description">
+                    Get professional insights and recommendations to optimize your LinkedIn profile. 
+                    Improve your visibility and attract better opportunities.
                 </p>
-                <div class="hero__features">
+                
+                <div class="features">
                     <div class="feature">
-                        <div class="feature__icon">📊</div>
-                        <span>Detailed Scoring</span>
+                        <div class="feature-icon">📊</div>
+                        <h3>Profile Scoring</h3>
+                        <p>Get detailed scores for each section of your profile</p>
                     </div>
                     <div class="feature">
-                        <div class="feature__icon">💡</div>
-                        <span>AI Recommendations</span>
+                        <div class="feature-icon">💡</div>
+                        <h3>Smart Recommendations</h3>
+                        <p>Receive actionable tips to improve your profile</p>
                     </div>
                     <div class="feature">
-                        <div class="feature__icon">🚀</div>
-               
+                        <div class="feature-icon">📋</div>
+                        <h3>Detailed Report</h3>
+                        <p>Download a comprehensive analysis report</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn--primary btn--lg hero-cta">Start Analysis</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Analyzer Section -->
+    <section class="analyzer" id="analyzer">
+        <div class="container">
+            <div class="analyzer-content">
+                <h2 class="analyzer-title">LinkedIn Profile Analyzer</h2>
+                <p class="analyzer-subtitle">Paste your LinkedIn profile content below or load a sample to get started</p>
+                
+                <div class="input-section">
+                    <div class="form-group">
+                        <label class="form-label" for="profile-input">LinkedIn Profile Content</label>
+                        <textarea 
+                            id="profile-input" 
+                            class="form-control profile-textarea" 
+                            placeholder="Paste your LinkedIn profile content here... Include your headline, summary, experience, and skills."
+                            rows="8"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn--outline load-sample-btn">Load Sample</button>
+                        <button class="btn btn--primary analyze-btn">Analyze Profile</button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading hidden" id="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Analyzing your profile...</p>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results hidden" id="results">
+                    <div class="results-header">
+                        <h3>Analysis Results</h3>
+                        <button class="btn btn--outline download-btn">Download Report</button>
+                    </div>
+                    
+                    <div class="overall-score">
+                        <div class="score-circle">
+                            <div class="score-number" id="overall-score">0</div>
+                            <div class="score-label">Overall Score</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-scores">
+                        <div class="score-item">
+                            <div class="score-header">
+                                <span class="score-title">Headline</span>
+                                <span class="score-value" id="headline-score">0</span>
+                            </div>
+                            <div class="score-bar">
+                                <div class="score-fill" id="headline-fill"></div>
+                            </div>
+                            <p class="score-feedback" id="headline-feedback"></p>
+                            <p class="score-recommendation" id="headline-recommendation"></p>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="score-header">
+                                <span class="score-title">Summary</span>
+                                <span class="score-value" id="summary-score">0</span>
+                            </div>
+                            <div class="score-bar">
+                                <div class="score-fill" id="summary-fill"></div>
+                            </div>
+                            <p class="score-feedback" id="summary-feedback"></p>
+                            <p class="score-recommendation" id="summary-recommendation"></p>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="score-header">
+                                <span class="score-title">Experience</span>
+                                <span class="score-value" id="experience-score">0</span>
+                            </div>
+                            <div class="score-bar">
+                                <div class="score-fill" id="experience-fill"></div>
+                            </div>
+                            <p class="score-feedback" id="experience-feedback"></p>
+                            <p class="score-recommendation" id="experience-recommendation"></p>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="score-header">
+                                <span class="score-title">Skills</span>
+                                <span class="score-value" id="skills-score">0</span>
+                            </div>
+                            <div class="score-bar">
+                                <div class="score-fill" id="skills-fill"></div>
+                            </div>
+                            <p class="score-feedback" id="skills-feedback"></p>
+                            <p class="score-recommendation" id="skills-recommendation"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendations">
+                        <h4>Key Recommendations</h4>
+                        <ul class="recommendations-list" id="recommendations-list">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
