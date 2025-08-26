@@ -15,10 +15,26 @@ Skills: JavaScript, React, Node.js, Python, AWS, Docker`;
 const mockAnalysisResults = {
   overallScore: 72,
   sections: {
-    headline: { score: 65, feedback: "Good but could be more impactful", recommendation: "Add specific technologies and years of experience" },
-    summary: { score: 78, feedback: "Solid foundation with relevant experience", recommendation: "Add quantifiable achievements and metrics" },
-    experience: { score: 70, feedback: "Good structure but lacks impact metrics", recommendation: "Use action verbs and add specific results" },
-    skills: { score: 75, feedback: "Good technical coverage", recommendation: "Organize by categories and add soft skills" }
+    headline: { 
+      score: 65, 
+      feedback: "Good but could be more impactful", 
+      recommendation: "Add specific technologies and years of experience" 
+    },
+    summary: { 
+      score: 78, 
+      feedback: "Solid foundation with relevant experience", 
+      recommendation: "Add quantifiable achievements and metrics" 
+    },
+    experience: { 
+      score: 70, 
+      feedback: "Good structure but lacks impact metrics", 
+      recommendation: "Use action verbs and add specific results" 
+    },
+    skills: { 
+      score: 75, 
+      feedback: "Good technical coverage", 
+      recommendation: "Organize by categories and add soft skills" 
+    }
   },
   recommendations: [
     "Add professional headshot to increase profile views",
@@ -29,9 +45,15 @@ const mockAnalysisResults = {
   ]
 };
 
+// Global variables
+let currentInputMode = 'text';
+let selectedImages = [];
+let ocrProgress = 0;
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
   setupEventListeners();
+  setupDragAndDrop();
 });
 
 function setupEventListeners() {
@@ -40,299 +62,525 @@ function setupEventListeners() {
   const heroCta = document.querySelector('.hero-cta');
   
   if (getStartedBtn) {
-    getStartedBtn.onclick = function() {
-      scrollToSection('analyzer');
-    };
+    getStartedBtn.onclick = () => scrollToSection('analyzer');
   }
   
   if (heroCta) {
-    heroCta.onclick = function() {
-      scrollToSection('analyzer');
-    };
+    heroCta.onclick = () => scrollToSection('analyzer');
   }
   
   // Load Sample button
   const loadSampleBtn = document.querySelector('.load-sample-btn');
   if (loadSampleBtn) {
-    loadSampleBtn.onclick = function() {
-      loadSample();
-    };
+    loadSampleBtn.onclick = loadSampleProfile;
   }
   
-  // Analyze button
+  // Analyze buttons
   const analyzeBtn = document.querySelector('.analyze-btn');
   if (analyzeBtn) {
-    analyzeBtn.onclick = function() {
-      startAnalysis();
-    };
+    analyzeBtn.onclick = analyzeProfile;
   }
   
   // Download button
   const downloadBtn = document.querySelector('.download-btn');
   if (downloadBtn) {
-    downloadBtn.onclick = function() {
-      downloadReport();
+    downloadBtn.onclick = downloadReport;
+  }
+
+  // Image upload handler
+  const imageUpload = document.getElementById('image-upload');
+  if (imageUpload) {
+    imageUpload.addEventListener('change', handleImageSelection);
+  }
+}
+
+function setupDragAndDrop() {
+  const uploadArea = document.getElementById('upload-area');
+  if (!uploadArea) return;
+
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  // Highlight drop area when item is dragged over it
+  ['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, highlight, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, unhighlight, false);
+  });
+
+  // Handle dropped files
+  uploadArea.addEventListener('drop', handleDrop, false);
+}
+
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function highlight(e) {
+  document.getElementById('upload-area').classList.add('dragover');
+}
+
+function unhighlight(e) {
+  document.getElementById('upload-area').classList.remove('dragover');
+}
+
+function handleDrop(e) {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  handleFiles(files);
+}
+
+function switchInputMode(mode) {
+  currentInputMode = mode;
+  
+  // Update toggle buttons
+  document.getElementById('text-mode-btn').classList.toggle('active', mode === 'text');
+  document.getElementById('image-mode-btn').classList.toggle('active', mode === 'image');
+  
+  // Show/hide input sections
+  document.getElementById('text-input-section').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('image-input-section').style.display = mode === 'image' ? 'block' : 'none';
+  
+  // Hide results and other sections
+  hideAllProcessingSections();
+}
+
+function handleImageSelection(event) {
+  const files = event.target.files;
+  handleFiles(files);
+}
+
+function handleFiles(files) {
+  const fileArray = Array.from(files);
+  const validImages = fileArray.filter(file => {
+    const isImage = file.type.startsWith('image/');
+    const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
+    return isImage && isValidSize;
+  });
+
+  if (validImages.length === 0) {
+    showNotification('❌ Please select valid image files (JPG, PNG, WebP) under 10MB each.');
+    return;
+  }
+
+  selectedImages = [...selectedImages, ...validImages];
+  displayImagePreviews();
+  showNotification(`✅ ${validImages.length} image(s) selected successfully!`);
+}
+
+function displayImagePreviews() {
+  const previewSection = document.getElementById('image-preview');
+  const previewContainer = document.getElementById('preview-container');
+  
+  if (selectedImages.length === 0) {
+    previewSection.style.display = 'none';
+    return;
+  }
+
+  previewSection.style.display = 'block';
+  previewContainer.innerHTML = '';
+
+  selectedImages.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const previewItem = document.createElement('div');
+      previewItem.className = 'preview-item';
+      previewItem.innerHTML = `
+        <img src="${e.target.result}" alt="Preview ${index + 1}" class="preview-img">
+        <div class="preview-info">${file.name}</div>
+        <button class="preview-remove" onclick="removeImage(${index})" title="Remove image">×</button>
+      `;
+      previewContainer.appendChild(previewItem);
     };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeImage(index) {
+  selectedImages.splice(index, 1);
+  displayImagePreviews();
+  
+  if (selectedImages.length === 0) {
+    document.getElementById('image-upload').value = '';
   }
   
-  // Textarea auto-resize
-  const textarea = document.getElementById('profile-input');
-  if (textarea) {
-    textarea.oninput = function() {
-      this.style.height = 'auto';
-      this.style.height = this.scrollHeight + 'px';
-    };
-  }
+  showNotification('🗑️ Image removed successfully!');
 }
 
-function scrollToSection(sectionId) {
-  const section = document.getElementById(sectionId);
-  if (section) {
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    
-    // Focus textarea after scroll
-    setTimeout(function() {
-      const textarea = document.getElementById('profile-input');
-      if (textarea) textarea.focus();
-    }, 800);
-  }
+function clearImages() {
+  selectedImages = [];
+  document.getElementById('image-upload').value = '';
+  document.getElementById('image-preview').style.display = 'none';
+  document.getElementById('extracted-text-section').style.display = 'none';
+  hideAllProcessingSections();
+  showNotification('🗑️ All images cleared!');
 }
 
-function loadSample() {
-  const textarea = document.getElementById('profile-input');
-  if (textarea) {
-    textarea.value = sampleProfileData;
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
-    
-    // Visual feedback
-    textarea.style.background = 'var(--color-bg-3)';
-    setTimeout(function() {
-      textarea.style.background = '';
-    }, 300);
-    
-    textarea.focus();
+async function extractTextFromImages() {
+  if (selectedImages.length === 0) {
+    showNotification('❌ Please select at least one image first.');
+    return;
   }
-}
 
-function startAnalysis() {
-  const textarea = document.getElementById('profile-input');
-  const loadingDiv = document.getElementById('loading');
-  const resultsDiv = document.getElementById('results');
-  const analyzeBtn = document.querySelector('.analyze-btn');
-  const loadSampleBtn = document.querySelector('.load-sample-btn');
+  // Show OCR processing indicator
+  showOCRProcessing();
   
-  if (!textarea || !textarea.value.trim()) {
-    alert('Please enter your LinkedIn profile content or load a sample profile.');
-    if (textarea) textarea.focus();
+  let extractedText = '';
+  let processedImages = 0;
+  
+  try {
+    for (let i = 0; i < selectedImages.length; i++) {
+      const file = selectedImages[i];
+      
+      updateOCRProgress(processedImages, selectedImages.length, `Processing ${file.name}...`);
+      
+      // Use Tesseract.js to extract text
+      const { data: { text } } = await Tesseract.recognize(file, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const progress = Math.round(m.progress * 100);
+            updateOCRProgress(processedImages, selectedImages.length, `Extracting text: ${progress}%`);
+          }
+        }
+      });
+      
+      extractedText += `\n--- From ${file.name} ---\n${text}\n`;
+      processedImages++;
+    }
+    
+    // Clean up extracted text
+    extractedText = cleanUpExtractedText(extractedText);
+    
+    // Hide OCR processing and show extracted text
+    hideOCRProcessing();
+    showExtractedText(extractedText);
+    
+    showNotification('✅ Text extracted successfully! Review and analyze your profile.');
+    
+  } catch (error) {
+    console.error('OCR Error:', error);
+    hideOCRProcessing();
+    showNotification('❌ Error extracting text from images. Please try again or use manual input.');
+  }
+}
+
+function cleanUpExtractedText(text) {
+  return text
+    .replace(/--- From .* ---/g, '') // Remove file separators
+    .replace(/\n{3,}/g, '\n\n') // Replace multiple line breaks with double
+    .replace(/[^\w\s\n\-•.,()]/g, ' ') // Remove special characters but keep basic punctuation
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
+}
+
+function showOCRProcessing() {
+  hideAllProcessingSections();
+  document.getElementById('ocr-processing').style.display = 'block';
+  ocrProgress = 0;
+  updateOCRProgress(0, selectedImages.length, 'Starting OCR processing...');
+}
+
+function hideOCRProcessing() {
+  document.getElementById('ocr-processing').style.display = 'none';
+}
+
+function updateOCRProgress(completed, total, status) {
+  const progressPercent = Math.round((completed / total) * 100);
+  document.getElementById('ocr-progress').style.width = `${progressPercent}%`;
+  document.getElementById('progress-text').textContent = `${progressPercent}%`;
+  document.getElementById('ocr-status').textContent = status;
+}
+
+function showExtractedText(text) {
+  const extractedTextSection = document.getElementById('extracted-text-section');
+  const extractedTextArea = document.getElementById('extracted-text');
+  
+  extractedTextArea.value = text;
+  extractedTextSection.style.display = 'block';
+  
+  // Scroll to extracted text
+  setTimeout(() => {
+    extractedTextSection.scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+}
+
+function enableTextEditing() {
+  const extractedTextArea = document.getElementById('extracted-text');
+  extractedTextArea.focus();
+  extractedTextArea.select();
+  showNotification('✏️ You can now edit the extracted text before analysis.');
+}
+
+function analyzeExtractedText() {
+  const extractedText = document.getElementById('extracted-text').value.trim();
+  
+  if (!extractedText) {
+    showNotification('❌ No text found to analyze. Please extract text from images first.');
     return;
   }
   
-  // Show loading, hide results
-  if (resultsDiv) {
-    resultsDiv.style.display = 'none';
-    resultsDiv.classList.add('hidden');
-  }
-  
-  if (loadingDiv) {
-    loadingDiv.style.display = 'block';
-    loadingDiv.classList.remove('hidden');
-  }
-  
-  // Disable buttons
-  if (analyzeBtn) {
-    analyzeBtn.disabled = true;
-    analyzeBtn.textContent = 'Analyzing...';
-  }
-  if (loadSampleBtn) {
-    loadSampleBtn.disabled = true;
-  }
-  
-  // Simulate 2-second analysis
-  setTimeout(function() {
-    // Hide loading
-    if (loadingDiv) {
-      loadingDiv.style.display = 'none';
-      loadingDiv.classList.add('hidden');
-    }
-    
-    // Show and populate results
-    displayResults();
-    
-    if (resultsDiv) {
-      resultsDiv.style.display = 'block';
-      resultsDiv.classList.remove('hidden');
-      
-      // Scroll to results
-      setTimeout(function() {
-        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-    
-    // Re-enable buttons
-    if (analyzeBtn) {
-      analyzeBtn.disabled = false;
-      analyzeBtn.textContent = 'Analyze Profile';
-    }
-    if (loadSampleBtn) {
-      loadSampleBtn.disabled = false;
-    }
-  }, 2000);
+  // Use the extracted text for analysis
+  analyzeProfileWithText(extractedText);
 }
 
-function displayResults() {
-  // Overall score
-  const overallScore = document.getElementById('overall-score');
-  if (overallScore) {
-    overallScore.textContent = mockAnalysisResults.overallScore;
-  }
-  
-  // Section scores
-  const sections = ['headline', 'summary', 'experience', 'skills'];
-  
-  sections.forEach(function(section) {
-    const sectionData = mockAnalysisResults.sections[section];
-    if (!sectionData) return;
-    
-    // Score number
-    const scoreEl = document.getElementById(section + '-score');
-    if (scoreEl) {
-      scoreEl.textContent = sectionData.score;
-    }
-    
-    // Score bar
-    const fillEl = document.getElementById(section + '-fill');
-    if (fillEl) {
-      // Set color based on score
-      if (sectionData.score < 60) {
-        fillEl.setAttribute('data-score', 'low');
-      } else if (sectionData.score < 80) {
-        fillEl.setAttribute('data-score', 'medium');
-      } else {
-        fillEl.setAttribute('data-score', 'high');
-      }
-      
-      // Animate width
-      fillEl.style.width = '0%';
-      setTimeout(function() {
-        fillEl.style.width = sectionData.score + '%';
-      }, 100);
-    }
-    
-    // Feedback
-    const feedbackEl = document.getElementById(section + '-feedback');
-    if (feedbackEl) {
-      feedbackEl.textContent = sectionData.feedback;
-    }
-    
-    // Recommendation
-    const recEl = document.getElementById(section + '-recommendation');
-    if (recEl) {
-      recEl.textContent = '💡 ' + sectionData.recommendation;
-    }
-  });
-  
-  // Recommendations list
-  const recList = document.getElementById('recommendations-list');
-  if (recList) {
-    recList.innerHTML = '';
-    mockAnalysisResults.recommendations.forEach(function(rec) {
-      const li = document.createElement('li');
-      li.textContent = rec;
-      recList.appendChild(li);
+function hideAllProcessingSections() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('ocr-processing').style.display = 'none';
+  document.getElementById('extracted-text-section').style.display = 'none';
+}
+
+function scrollToSection(sectionId) {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
     });
   }
 }
 
-function downloadReport() {
-  const textarea = document.getElementById('profile-input');
-  const downloadBtn = document.querySelector('.download-btn');
-  
-  if (!textarea || !textarea.value.trim()) {
-    alert('Please analyze a profile first before downloading the report.');
-    return;
-  }
-  
-  // Generate report content
-  const reportContent = generateReport(textarea.value);
-  
-  try {
-    // Create blob and download
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
-    link.href = url;
-    link.download = 'linkedin-profile-analysis.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    // Success feedback
-    if (downloadBtn) {
-      const originalText = downloadBtn.textContent;
-      downloadBtn.textContent = 'Downloaded!';
-      downloadBtn.style.backgroundColor = 'var(--color-success)';
-      downloadBtn.style.color = 'white';
-      
-      setTimeout(function() {
-        downloadBtn.textContent = originalText;
-        downloadBtn.style.backgroundColor = '';
-        downloadBtn.style.color = '';
-      }, 2000);
+function loadSampleProfile() {
+  if (currentInputMode === 'text') {
+    const textarea = document.getElementById('profile-input');
+    if (textarea) {
+      textarea.value = sampleProfileData;
+      textarea.focus();
+      showNotification('✅ Sample profile loaded! Click "Analyze Profile" to see results.');
     }
-  } catch (error) {
-    alert('Download failed. Please try again.');
+  } else {
+    showNotification('🔄 Switch to "Enter Text" mode to load sample profile.');
   }
 }
 
-function generateReport(profileContent) {
-  const date = new Date().toLocaleDateString();
+function analyzeProfile() {
+  if (currentInputMode === 'text') {
+    const profileInput = document.getElementById('profile-input');
+    if (!profileInput || !profileInput.value.trim()) {
+      showNotification('❌ Please enter your LinkedIn profile content first.');
+      return;
+    }
+    analyzeProfileWithText(profileInput.value.trim());
+  } else {
+    showNotification('🔄 Please extract text from images first or switch to text input mode.');
+  }
+}
+
+function analyzeProfileWithText(profileText) {
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
   
-  let report = `LinkedIn Profile Analysis Report
-Generated: ${date}
+  // Hide other sections and show loading
+  hideAllProcessingSections();
+  if (loading) loading.style.display = 'block';
+  
+  // Scroll to loading section
+  setTimeout(() => {
+    if (loading) {
+      loading.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+  
+  // Simulate analysis delay
+  setTimeout(() => {
+    displayResults();
+  }, 3000);
+}
 
-OVERALL SCORE: ${mockAnalysisResults.overallScore}/100
-
-SECTION BREAKDOWN:
-================
-
-`;
-
-  // Add each section
-  Object.keys(mockAnalysisResults.sections).forEach(function(section) {
-    const data = mockAnalysisResults.sections[section];
-    const name = section.charAt(0).toUpperCase() + section.slice(1);
+function displayResults() {
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  
+  // Hide loading and show results
+  if (loading) loading.style.display = 'none';
+  if (results) {
+    results.style.display = 'block';
     
-    report += `${name}:
-Score: ${data.score}/100
-Feedback: ${data.feedback}
-Recommendation: ${data.recommendation}
+    // Scroll to results
+    setTimeout(() => {
+      results.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
+  
+  // Update overall score
+  updateOverallScore();
+  
+  // Update section scores
+  updateSectionScores();
+  
+  // Update recommendations
+  updateRecommendations();
+  
+  showNotification('✅ Analysis complete! Check your results below.');
+}
 
-`;
+function updateOverallScore() {
+  const scoreElement = document.getElementById('overall-score');
+  const progressElement = document.getElementById('score-progress');
+  
+  if (scoreElement && progressElement) {
+    // Animate score counting
+    animateScore(scoreElement, mockAnalysisResults.overallScore);
+    
+    // Animate progress bar
+    setTimeout(() => {
+      progressElement.style.width = mockAnalysisResults.overallScore + '%';
+    }, 500);
+  }
+}
+
+function updateSectionScores() {
+  const sections = ['headline', 'summary', 'experience', 'skills'];
+  
+  sections.forEach((sectionName, index) => {
+    setTimeout(() => {
+      const sectionData = mockAnalysisResults.sections[sectionName];
+      const sectionElement = document.getElementById(`${sectionName}-section`);
+      
+      if (sectionElement && sectionData) {
+        const scoreElement = sectionElement.querySelector('.section-score');
+        const feedbackElement = sectionElement.querySelector('.section-feedback');
+        const recommendationElement = sectionElement.querySelector('.section-recommendation span');
+        
+        if (scoreElement) {
+          animateScore(scoreElement, sectionData.score);
+          scoreElement.className = `section-score ${getScoreClass(sectionData.score)}`;
+        }
+        
+        if (feedbackElement) {
+          feedbackElement.textContent = sectionData.feedback;
+        }
+        
+        if (recommendationElement) {
+          recommendationElement.textContent = sectionData.recommendation;
+        }
+      }
+    }, index * 200);
+  });
+}
+
+function updateRecommendations() {
+  const recommendationsList = document.getElementById('recommendations-list');
+  
+  if (recommendationsList) {
+    recommendationsList.innerHTML = '';
+    
+    mockAnalysisResults.recommendations.forEach((recommendation, index) => {
+      setTimeout(() => {
+        const li = document.createElement('li');
+        li.textContent = recommendation;
+        li.style.opacity = '0';
+        li.style.transform = 'translateY(10px)';
+        recommendationsList.appendChild(li);
+        
+        setTimeout(() => {
+          li.style.transition = 'all 0.3s ease';
+          li.style.opacity = '1';
+          li.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 100);
+    });
+  }
+}
+
+function animateScore(element, targetScore) {
+  let currentScore = 0;
+  const increment = targetScore / 30;
+  
+  const animation = setInterval(() => {
+    currentScore += increment;
+    if (currentScore >= targetScore) {
+      currentScore = targetScore;
+      clearInterval(animation);
+    }
+    element.textContent = Math.round(currentScore);
+  }, 50);
+}
+
+function getScoreClass(score) {
+  if (score >= 80) return 'score-excellent';
+  if (score >= 60) return 'score-good';
+  return 'score-poor';
+}
+
+function downloadReport() {
+  const reportContent = generateReportContent();
+  
+  const blob = new Blob([reportContent], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  
+  a.href = url;
+  a.download = `linkedin-profile-analysis-${new Date().toISOString().split('T')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  
+  showNotification('📄 Report downloaded successfully!');
+}
+
+function generateReportContent() {
+  const date = new Date().toLocaleDateString();
+  let content = `LINKEDIN PROFILE ANALYSIS REPORT\n`;
+  content += `Generated on: ${date}\n`;
+  content += `Analysis Method: ${currentInputMode === 'image' ? 'Screenshot OCR' : 'Manual Text Input'}\n`;
+  content += `Overall Score: ${mockAnalysisResults.overallScore}/100\n\n`;
+  content += `═══════════════════════════════════════════════════\n\n`;
+  
+  // Section analysis
+  Object.keys(mockAnalysisResults.sections).forEach(sectionName => {
+    const section = mockAnalysisResults.sections[sectionName];
+    content += `${sectionName.toUpperCase()} (Score: ${section.score}/100)\n`;
+    content += `Feedback: ${section.feedback}\n`;
+    content += `Recommendation: ${section.recommendation}\n\n`;
   });
   
-  report += `KEY RECOMMENDATIONS:
-==================
-
-`;
-  
-  mockAnalysisResults.recommendations.forEach(function(rec, i) {
-    report += `${i + 1}. ${rec}
-`;
+  content += `═══════════════════════════════════════════════════\n\n`;
+  content += `KEY RECOMMENDATIONS:\n`;
+  mockAnalysisResults.recommendations.forEach((rec, index) => {
+    content += `${index + 1}. ${rec}\n`;
   });
   
-  report += `
-
-PROFILE CONTENT ANALYZED:
-========================
-
-${profileContent}
-
----
-Generated by ProfileAnalyzer
-`;
+  content += `\n═══════════════════════════════════════════════════\n`;
+  content += `Generated by ProfileAnalyzer - AI-Powered LinkedIn Profile Optimization\n`;
+  content += `Now with Screenshot Analysis Feature!`;
   
-  return report;
+  return content;
+}
+
+function showNotification(message) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1000;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+    word-wrap: break-word;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remove after 4 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 4000);
 }
