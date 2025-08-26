@@ -262,25 +262,6 @@ function copyRecommendations() {
   });
 }
 
-// Tab functionality
-function showTab(tabName) {
-  // Hide all tab contents
-  document.querySelectorAll('.tab-content').forEach(tab => {
-    tab.classList.remove('active');
-  });
-  
-  // Remove active class from all tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  
-  // Show selected tab content
-  document.getElementById(`${tabName}-tab`).classList.add('active');
-  
-  // Add active class to selected tab button
-  event.target.classList.add('active');
-}
-
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
   console.log('LinkedIn Profile Reviewer MVP loaded successfully!');
