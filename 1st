@@ -1,0 +1,10 @@
+# Local folder mein files copy kare
+# Git initialize kare
+git init
+git add .
+git commit -m "LinkedIn Profile Reviewer MVP"
+git branch -M main
+
+# GitHub repository se connect kare
+git remote add origin https://github.com/yourusername/linkedin-profile-reviewer.git
+git push -u origin main
